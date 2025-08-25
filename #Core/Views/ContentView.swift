@@ -50,7 +50,7 @@ struct ContentView: View {
                 
                 // Next exercise preview
                 if viewModel.showNextExercisePreview {
-                    Text("Next: \(viewModel.exercises[viewModel.currentIndex + 1].name)")
+                    Text("Nexttttt: \(viewModel.exercises[viewModel.currentIndex + 1].name)")
                         .font(.system(size: 50))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
