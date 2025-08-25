@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import AudioToolbox
+import AVFoundation
 
 class WorkoutViewModel: ObservableObject {
     @Published var currentIndex = 0
@@ -9,14 +9,21 @@ class WorkoutViewModel: ObservableObject {
     @Published var isComplete = false
 
     var exercises: [Exercise]
-
+    // MARK: - Timer & countdown tracking
     private var timerCancellable: AnyCancellable?
-    private var lastBeepSecond: Int? // To avoid overlapping beeps
     private var startDate: Date?
+    private var lastBeepSecond: Int?
+    private var previousSecond: Int? // tracks last second ticked
+
+    
+    private var beepPlayer: AVAudioPlayer? // plays beep even in silent mode
 
     init(exercises: [Exercise]) {
         self.exercises = exercises
         self.timeRemaining = exercises.first?.duration ?? 0
+        
+        setupBeepSound()
+        setupAudioSession()
     }
 
     /// Show next exercise preview
@@ -45,20 +52,24 @@ class WorkoutViewModel: ObservableObject {
     
     private func tick() {
         guard let start = startDate else { return }
-        
-        let elapsed = Int(Date().timeIntervalSince(start))
-        let duration = exercises[currentIndex].duration
-        let remaining = max(duration - elapsed, 0)
-        
-        if remaining != timeRemaining {
-            timeRemaining = remaining
-            playCountdownIfNeeded()
+
+        let elapsed = Date().timeIntervalSince(start)
+        let duration = TimeInterval(exercises[currentIndex].duration)
+        let remainingTime = max(duration - elapsed, 0)
+        let currentSecond = Int(ceil(remainingTime)) // get the ceiling to count down correctly
+
+        // Only update once per second
+        if previousSecond != currentSecond {
+            timeRemaining = currentSecond
+            previousSecond = currentSecond
+            playCountdownIfNeeded(currentSecond)
         }
-        
-        if timeRemaining == 0 {
+
+        if currentSecond == 0 {
             nextExercise()
         }
     }
+
 
     func nextExercise() {
         if currentIndex + 1 < exercises.count {
@@ -72,17 +83,42 @@ class WorkoutViewModel: ObservableObject {
         lastBeepSecond = nil // reset beep tracker for new exercise
     }
 
-    // MARK: - System Sound Countdown
-    private func playCountdownIfNeeded() {
-        // Play only if in last 5 seconds and not already played this second
-        if timeRemaining <= 5 && timeRemaining > 0 {
-            if lastBeepSecond != timeRemaining {
-                AudioServicesPlaySystemSound(1052) // Tri-tone, works reliably
-                lastBeepSecond = timeRemaining
+    // MARK: - Countdown Beep
+    private func playCountdownIfNeeded(_ remaining: Int) {
+        if remaining <= 5 && remaining > 0 {
+            if lastBeepSecond != remaining {
+                beepPlayer?.stop()       // stop previous play
+                beepPlayer?.currentTime = 0
+                beepPlayer?.play()       // play immediately
+                lastBeepSecond = remaining
             }
         }
     }
+
     
+    // MARK: - Audio Setup
+    private func setupBeepSound() {
+        guard let url = Bundle.main.url(forResource: "beep", withExtension: "mp3") else {
+            print("Beep sound not found in bundle")
+            return
+        }
+        do {
+            beepPlayer = try AVAudioPlayer(contentsOf: url)
+            beepPlayer?.prepareToPlay()
+        } catch {
+            print("Failed to load beep sound: \(error)")
+        }
+    }
+    
+    private func setupAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to activate audio session: \(error)")
+        }
+    }
+
     deinit {
         timerCancellable?.cancel()
     }

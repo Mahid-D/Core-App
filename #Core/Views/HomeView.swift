@@ -4,6 +4,10 @@ struct HomeView: View {
     @State private var showExercises = false
     @StateObject private var quotesManager = QuotesManager()
     
+    let allExercises = GroupedWorkouts.workouts.values.flatMap { $0 }
+
+
+    
     var body: some View {
         NavigationStack {
             
@@ -17,16 +21,16 @@ struct HomeView: View {
                 VStack(spacing: 20) {
                     // ✅ Header Bar
                     HStack {
-                        NavigationLink(destination: ExercisesView(exercises: filteredExercises)) {
+                        NavigationLink(destination: GroupedExercisesView(groupedWorkouts: GroupedWorkouts.workouts)) {
                             VStack(spacing: 8) {
                                 Image(systemName: "figure.strengthtraining.traditional")
-                                    .font(.system(size: 34)) // ✅ Icon size
+                                    .font(.system(size: 34))
                             }
                             .padding(.vertical, 2)
                             .padding(.horizontal, 8)
-                            //.background(Color(.systemGray6).opacity(0.8))
                             .cornerRadius(25)
                         }
+
                         
                         .disclosureGroupStyle(.automatic)
                         .fixedSize()
@@ -57,10 +61,6 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
                     
-                    // ✅ Other content...
-                    Text("\(filteredExercises.count) Exercises • ~15 min")
-                        .font(.subheadline)
-                        .foregroundColor(.white)
                     
                     Spacer()
                     Text(quotesManager.currentQuote)
@@ -72,8 +72,22 @@ struct HomeView: View {
                                            .transition(.opacity)
                                            .animation(.easeInOut(duration: 0.5), value: quotesManager.currentQuote)
                     Spacer(minLength: 0)
-                
-                    NavigationLink(destination: ContentView(viewModel: WorkoutViewModel(exercises: absWorkout))) {
+                    // Custom Workout Button
+                    NavigationLink(destination: GroupedExercisesView(groupedWorkouts: GroupedWorkouts.workouts)
+                        .preferredColorScheme(.dark)){
+                          Text("Start Custom Workout")
+                              .font(.headline)
+                              .padding(.vertical, 12)
+                              .padding(.horizontal, 40)
+                              .background(Color.green.opacity(0.85))
+                              .foregroundColor(.white)
+                              .cornerRadius(30)
+                      }
+                  
+                Spacer()
+                    NavigationLink(
+                        destination: ContentView(viewModel: WorkoutViewModel(exercises: randomWorkout()))
+                    ) {
                         Text("Start Workout")
                             .font(.headline)
                             .padding(.vertical, 12)
@@ -82,6 +96,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .cornerRadius(30)
                     }
+
                     .padding(.bottom, 20)
             
                 }
@@ -98,9 +113,26 @@ struct HomeView: View {
     }
     
     // ✅ Filtered list: Only exercises, no rests
-    var filteredExercises: [Exercise] {
-        absWorkout.filter { !$0.name.contains("Rest") }
+    //var filteredExercises: [Exercise] {
+       // GroupedWorkouts.filter { !$0.name.contains("Rest") }
+    //}
+    
+    func randomWorkout(count: Int = 10, restDuration: Int = 15) -> [Exercise] {
+        let exercises = allExercises.shuffled()
+        let selected = Array(exercises.prefix(count))
+        
+        var workoutWithRest: [Exercise] = []
+        for (index, exercise) in selected.enumerated() {
+            workoutWithRest.append(exercise)
+            if index < selected.count - 1 {
+                workoutWithRest.append(Exercise(name: "Rest", duration: restDuration))
+            }
+        }
+        
+        return workoutWithRest
     }
+
+
 }
 
 #Preview {
