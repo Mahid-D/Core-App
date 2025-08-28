@@ -42,6 +42,13 @@ struct GroupedExercisesView: View {
                                     .padding(.vertical, 4)
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                
+                                // Lottie Preview (if available)
+                                       if let animationName = exercise.animation {
+                                           LottieView(animationName: animationName)
+                                               .frame(height: 150)
+                                               .padding(.vertical, 8)
+                                       }
                             }
                         },
                         label: {
@@ -89,7 +96,7 @@ struct GroupedExercisesView: View {
         for (index, ex) in selected.enumerated() {
             workout.append(ex)
             if index < selected.count - 1 {
-                workout.append(Exercise(name: "Rest", duration: restDuration))
+                workout.append(Exercise(name: "Rest", duration: restDuration, animation: nil))
             }
         }
         return ContentView(viewModel: WorkoutViewModel(exercises: workout))

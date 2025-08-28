@@ -125,7 +125,7 @@ struct HomeView: View {
         for (index, exercise) in selected.enumerated() {
             workoutWithRest.append(exercise)
             if index < selected.count - 1 {
-                workoutWithRest.append(Exercise(name: "Rest", duration: restDuration))
+                workoutWithRest.append(Exercise(name: "Rest", duration: restDuration, animation: nil))
             }
         }
         

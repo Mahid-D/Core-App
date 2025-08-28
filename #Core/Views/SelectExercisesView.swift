@@ -74,7 +74,7 @@ struct SelectExercisesView: View {
         for (index, ex) in selected.enumerated() {
             workout.append(ex)
             if index < selected.count - 1 {
-                workout.append(Exercise(name: "Rest", duration: restDuration))
+                workout.append(Exercise(name: "Rest", duration: restDuration, animation: nil))
             }
         }
         return ContentView(viewModel: WorkoutViewModel(exercises: workout))
@@ -83,12 +83,10 @@ struct SelectExercisesView: View {
 // ✅ Preview
 #Preview {
     let sampleExercises = [
-        Exercise(name: "Crunch", duration: 30),
-        Exercise(name: "Plank", duration: 45),
-        Exercise(name: "Sit-Up", duration: 30),
-        Exercise(name: "Bicycle Crunch", duration: 30),
-        Exercise(name: "Leg Raise", duration: 30)
+        Exercise(name: "Crunch", duration: 30, animation: "standard_crunch"),
+        Exercise(name: "Plank", duration: 30, animation: "plank_demo")
     ]
     SelectExercisesView(allExercises: sampleExercises)
         .preferredColorScheme(.dark)
 }
+
